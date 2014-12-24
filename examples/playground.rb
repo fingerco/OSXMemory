@@ -7,7 +7,7 @@ abort("No PID") if matches.empty?
 pid = matches.first.pid
 
 task = OSXMemory.task_for_pid pid
-threads = OSXMemory.threads_for_task task
-state = OSXMemory.thread_state threads.first
+threads = task.threads
+state = threads.first.state
 
 puts state.dump

@@ -2,6 +2,9 @@ module OSXMemoryModules
   module Libc
     extend FFI::Library
     ffi_lib FFI::Library::LIBC
+
+    X86_THREAD_STATE64    = 4
+
     typedef :int, :kern_return_t
 
     typedef :ulong_long, :memory_object_offset_t
