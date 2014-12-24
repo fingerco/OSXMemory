@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-require '../OSXMemory'
 require 'sys/proctable'
+require_relative '../OSXMemory'
 
 matches = Sys::ProcTable.ps.select{|p| p.comm =~ /Calculator/ }
 abort("No PID") if matches.empty?
