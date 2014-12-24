@@ -100,8 +100,8 @@ EOM
   end
 
   def self.thread_state(thread)
-  	state = FFI::MemoryPointer.new ThreadState
-  	count = FFI::MemoryPointer.new(:int, 1).write_uint ThreadState::COUNT
+    state = FFI::MemoryPointer.new ThreadState
+    count = FFI::MemoryPointer.new(:int, 1).write_uint ThreadState::COUNT
 
     r = Libc.thread_get_state(thread, X86_THREAD_STATE64, state, count)
     abort("THREAD STATE ERROR: #{r}") if r != 0
