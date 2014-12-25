@@ -18,5 +18,11 @@ module OSXMemoryModules
       abort("THREAD STATE ERROR: #{response}") if response != 0
       ThreadState.new state
     end
+
+    def save_state(state)
+      response = Libc.thread_set_state(@thread_id, Libc::X86_THREAD_STATE64, state.to_ptr, ThreadState::COUNT)
+      #abort("THREAD SAVE STATE ERROR: #{response}") if response != 0
+      state
+    end
   end
 end

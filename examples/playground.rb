@@ -8,6 +8,14 @@ pid = matches.first.pid
 
 task = OSXMemory.task_for_pid pid
 threads = task.threads
-state = threads.first.state
+task.attach
 
-puts state.dump
+hitcount = 0
+
+puts "ADDING BREAKPOINT"
+task.add_breakpoint(0x10000164e) do
+  hitcount += 1
+  puts "Clear hit #{hitcount} times"
+end
+
+task.process_loop()
