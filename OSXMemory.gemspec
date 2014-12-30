@@ -9,4 +9,6 @@ Gem::Specification.new do |s|
   s.files       = ["lib/OSXMemory.rb"]
   s.homepage    = 'https://github.com/fingerco/OSXMemory'
   s.license     = 'MIT'
+
+  s.add_runtime_dependency "ffi"
 end

@@ -1,7 +1,6 @@
 require 'FFI'
 require_relative 'Libc'
 require_relative 'Constants'
-require 'pry'
 
 module OSXMemoryModules
   class Task
