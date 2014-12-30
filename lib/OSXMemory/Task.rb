@@ -7,6 +7,8 @@ module OSXMemoryModules
   class Task
     attr_accessor :task_id
 
+    NOP_OPCODE = [0x90].pack('C')
+
     def initialize(pid, task_id = false)
       @pid = pid
       @breakpoints = []
@@ -107,6 +109,15 @@ module OSXMemoryModules
       (matches.empty? ? false : matches)
     end
 
+    def nop_slide(start_addr, final_addr = nil)
+      final_addr ||= start_addr + 1
+
+      for curr_offset in 0...(final_addr - start_addr)
+        self.protect(start_addr + curr_offset, NOP_OPCODE.size, false, Protection::ALL)
+        self.write(start_addr + curr_offset, NOP_OPCODE)
+      end
+    end
+
     def process_loop
       @exited = false
 
@@ -140,6 +151,7 @@ module OSXMemoryModules
           @exited = false
         when signal == 0xB #SIGSEGV
           self.threads.each do |thread|
+            next unless thread.state
             puts thread.state.dump
           end
 
@@ -148,6 +160,8 @@ module OSXMemoryModules
 
           self.threads.each do |thread|
             state = thread.state
+            next unless state
+
             state.rip -= 1
 
             @breakpoints.each do |bp|
@@ -157,6 +171,8 @@ module OSXMemoryModules
 
           self.threads.each do |thread|
             state = thread.state
+            next unless state
+
             state.rip -= 1
 
             if self.remove_breakpoints(state.rip)
