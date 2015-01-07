@@ -46,6 +46,11 @@ module OSXMemoryModules
       response.first
     end
 
+    def malloc(size); Libc.malloc(size); end
+    def calloc(size); Libc.calloc(size); end
+
+    def free(pointer); Libc.free(pointer); end
+
     def read(addr, size)
       buf = FFI::MemoryPointer.new(size)
       len = FFI::MemoryPointer.new(:uint).write_uint(size)
