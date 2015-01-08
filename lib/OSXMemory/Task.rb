@@ -46,10 +46,21 @@ module OSXMemoryModules
       response.first
     end
 
-    def malloc(size); Libc.malloc(size); end
-    def calloc(size); Libc.calloc(size); end
+    def alloc(size, address = false, anywhere = true)
+      addr = FFI::MemoryPointer.new :int64, 1
+      addr.write_int64(address) if address
+      response = Libc.vm_allocate(@task_id, addr, size, (anywhere ? 1 : 0))
 
-    def free(pointer); Libc.free(pointer); end
+      abort("COULD NOT ALLOCATE TASK: #{response}") if response != 0
+      addr.read_int64
+    end
+
+    def dealloc(address, size)
+      addr = FFI::MemoryPointer.new :int, 1
+      addr.write_int(address)
+      response = Libc.vm_deallocate(@task_id, addr, size)
+      abort("COULD NOT DEALLOCATE TASK: #{response}") if response != 0
+    end
 
     def read(addr, size)
       buf = FFI::MemoryPointer.new(size)
