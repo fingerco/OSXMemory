@@ -4,6 +4,8 @@ require_relative "OSXMemory/Thread"
 require_relative "OSXMemory/ThreadState"
 require_relative "OSXMemory/Breakpoint"
 require_relative "OSXMemory/Libc"
+require_relative "OSXMemory/InterfaceProperty"
+require_relative "OSXMemory/InterfaceObject"
 
 class OSXMemory
   include OSXMemoryModules

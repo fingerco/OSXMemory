@@ -21,6 +21,8 @@ module OSXMemoryModules
       end
 
       @task_id = task_id
+      @bp_after_step = {}
+      @bp_reinstall = {}
     end
 
 
@@ -174,29 +176,66 @@ module OSXMemoryModules
         when signal != 0x13 #WIFSTOPPED
 
           self.threads.each do |thread|
-            state = thread.state
-            next unless state
+            next unless thread.state
+            curr_rip = thread.state.rip - 1
 
-            state.rip -= 1
+            should_redo_instruction = false
+            should_step = true
 
-            @breakpoints.each do |bp|
-              bp.perform_action(thread) if bp.addr == state.rip
+            breakpoints = @breakpoints.dup.select{|curr_bp| curr_bp.installed == true && curr_bp.addr == curr_rip }
+            alone_breakpoint = breakpoints.select{|curr_bp| curr_bp.execute_alone }.first
+            cleanup_breakpoint = breakpoints.select{|curr_bp| curr_bp.is_cleanup }.first
+
+            breakpoints = [alone_breakpoint] if alone_breakpoint
+            breakpoints = [cleanup_breakpoint] if cleanup_breakpoint
+
+            breakpoints.each do |bp|
+              options = {
+                reinstall_bp: true,
+                after_step: nil,
+                return_cleanup: nil
+              }
+
+              bp.perform_action(thread, options)
+
+
+              if options[:return_cleanup]
+                cleanup_bp = self.add_breakpoint(curr_rip, &options[:return_cleanup])
+                cleanup_bp.is_cleanup = true
+              end
+
+              if options[:after_step]
+                @bp_after_step[curr_rip] ||= []
+                @bp_after_step[curr_rip] << options[:after_step]
+              end
+
+              if options[:reinstall_bp] && !bp.is_cleanup
+                @bp_reinstall[curr_rip] ||= []
+                @bp_reinstall[curr_rip] << bp
+              end
+
+              should_redo_instruction = true
+              should_step = @breakpoints.select {|curr_bp| curr_bp.installed == true && curr_bp.addr == curr_rip }.count == 1
+
+              if bp.orig
+                @breakpoints.select{|curr_bp| curr_bp.addr == curr_rip && !curr_bp.orig}.each{|curr_bp| curr_bp.orig = bp.orig}
+              end
+
+              bp.uninstall(should_step) if bp.installed
             end
-          end
 
-          self.threads.each do |thread|
-            state = thread.state
-            next unless state
-
-            state.rip -= 1
-
-            if self.remove_breakpoints(state.rip)
+            if should_redo_instruction
+              state = thread.state
+              state.rip -= 1
               thread.save_state(state)
-              self.step
-              wait_for_process_signal
-              self.reinstall_breakpoints(state.rip)
-            end
 
+              if should_step
+                self.step
+                wait_for_process_signal
+                @bp_after_step[state.rip].each {|proc| proc.call(thread)} if @bp_after_step[state.rip]
+                @bp_reinstall[state.rip].each {|removed_bp| removed_bp.install} if @bp_reinstall[state.rip]
+              end
+            end
           end
 
           self.continue

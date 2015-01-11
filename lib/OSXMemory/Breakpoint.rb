@@ -4,7 +4,7 @@ require_relative 'Libc'
 module OSXMemoryModules
   class Breakpoint
     INT3 = [0xCC].pack('C')
-    attr_accessor :addr, :installed
+    attr_accessor :addr, :installed, :execute_alone, :is_cleanup, :orig
 
     def initialize(task, addr, &action)
       @task = task
@@ -12,10 +12,12 @@ module OSXMemoryModules
       @action = action
       @orig = false
       @installed = false
+      @execute_alone = false
+      @is_cleanup = false
     end
 
-    def perform_action(thread)
-      @action.call(thread)
+    def perform_action(thread, options)
+      @action.call(thread, options)
     end
 
     def install
@@ -33,10 +35,10 @@ module OSXMemoryModules
       @task.resume
     end
 
-    def uninstall
+    def uninstall(revert = true)
       @installed = false
 
-      if @orig
+      if @orig && revert
         @task.suspend
         @task.write(@addr, @orig)
         @task.resume
