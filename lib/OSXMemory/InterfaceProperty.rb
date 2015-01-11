@@ -34,7 +34,7 @@ module OSXMemoryModules
         value = new_string_address
       end
 
-      interface_object.instance.write(write_address, pack_with_type(type, value))
+      interface_object.instance.write(write_address, self.class.pack_with_type(type, value))
     end
 
     def self.read_with_type(instance, property_type, addr, size = nil)
