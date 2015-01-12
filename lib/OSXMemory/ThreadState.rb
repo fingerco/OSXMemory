@@ -48,5 +48,39 @@ module OSXMemoryModules
       RSP: #{self.rsp.to_s(16).rjust(16, "0")} #{maybe_hex.call(self.rsp)}
 EOM
     end
+
+    def immutable_state
+      {
+        rax: self.rax,
+        rbx: self.rbx,
+        rcx: self.rcx,
+        rdx: self.rdx,
+        rdi: self.rdi,
+        rsi: self.rsi,
+        rbp: self.rbp,
+        rsp: self.rsp,
+        r8: self.r8,
+        r9: self.r9,
+        r10: self.r10,
+        r11: self.r11,
+        r12: self.r12,
+        r13: self.r13,
+        r14: self.r14,
+        r15: self.r15,
+        rip: self.rip,
+        rflags: self.rflags,
+        cs: self.cs,
+        fs: self.fs,
+        gs: self.gs
+      }
+    end
+
+    def load_immutable_state(state)
+      state.each do |register, value|
+        self.send(register.to_s + '=', value)
+      end
+
+      self
+    end
   end
 end

@@ -1,6 +1,7 @@
 require 'FFI'
 require_relative 'Libc'
 require_relative 'Constants'
+require 'pry'
 
 module OSXMemoryModules
   class Task
@@ -176,8 +177,8 @@ module OSXMemoryModules
         when signal != 0x13 #WIFSTOPPED
 
           self.threads.each do |thread|
-            next unless thread.state
-            curr_rip = thread.state.rip - 1
+            next unless thread.state && curr_rip = thread.state.rip
+            curr_rip -= 1
 
             should_redo_instruction = false
             should_step = true
@@ -192,6 +193,7 @@ module OSXMemoryModules
             breakpoints.each do |bp|
               options = {
                 reinstall_bp: true,
+                remove_after_execution: false,
                 after_step: nil,
                 return_cleanup: nil
               }
@@ -222,10 +224,15 @@ module OSXMemoryModules
               end
 
               bp.uninstall(should_step) if bp.installed
+
+              if !options[:reinstall_bp] && (options[:remove_after_execution] || bp.is_cleanup)
+                @breakpoints.delete bp
+              end
             end
 
             if should_redo_instruction
               state = thread.state
+
               state.rip -= 1
               thread.save_state(state)
 
